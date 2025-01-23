@@ -12,7 +12,7 @@ override WARNFLAGS := -Wall -Wextra -Wpedantic
 override BASEFLAGS := $(WARNFLAGS) -pipe -flto -O3 $(ARCHFLAGS)
 
 CC       := gcc
-CFLAGS   := $(BASEFLAGS) -std=gnu2x
+CFLAGS   := $(BASEFLAGS) -std=$(or $(STD),gnu2x)
 CPPFLAGS := -DNDEBUG=1
 
 all: $(BIN)
