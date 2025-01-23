@@ -9,6 +9,25 @@
 #include "letopt.h"
 #undef INCLUDED_FROM_LETOPT_C_
 
+#ifdef __clang_major__
+# if __clang_major__ >= 14
+#  pragma clang diagnostic push
+#  pragma clang diagnostic ignored "-Wdeclaration-after-statement"
+#  if __clang_major__ >= 16
+#   pragma clang diagnostic ignored "-Wunsafe-buffer-usage"
+#  endif // __clang_major__ >= 16
+#  if __clang_major__ == 17
+#   pragma clang diagnostic ignored "-Wpre-c2x-compat"
+#  endif // __clang_major__ == 17
+#  if __clang_major__ >= 18
+#   pragma clang diagnostic ignored "-Wpre-c23-compat"
+#  endif // __clang_major__ >= 18
+#  if __clang_major__ >= 19
+#   pragma clang diagnostic ignored "-Wpre-c11-compat"
+#  endif // __clang_major__ >= 19
+# endif // __clang_major__ >= 14
+#endif // __clang_major__
+
 extern_letopt_state_init();
 extern_letopt_get_number_arg();
 extern_letopt_get_string_arg();
@@ -105,3 +124,9 @@ letopt_get_long_opt_arg (struct letopt_state *const state,
 	state->e = EINVAL;
 	return EINVAL;
 }
+
+#ifdef __clang_major__
+# if __clang_major__ >= 14
+#  pragma clang diagnostic pop
+# endif // __clang_major__ >= 14
+#endif // __clang_major__
