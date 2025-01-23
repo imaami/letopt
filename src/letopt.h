@@ -54,6 +54,45 @@ struct letopt_state {
 #endif // OPTIONS || INCLUDED_FROM_LETOPT_C_
 
 #ifdef OPTIONS
+#ifndef letopt_noreturn
+# if __STDC_VERSION__ >= 202000L && (__GNUC__ >= 13 || \
+     (defined(__clang_major__) && __clang_major__ >= 15))
+#  define letopt_noreturn [[noreturn]]
+# elif __STDC_VERSION__ >= 201112L
+#  define letopt_noreturn _Noreturn
+# else // __STDC_VERSION__ < 201112L
+#  define letopt_noreturn __attribute__((noreturn))
+# endif // __STDC_VERSION__
+#endif // letopt_noreturn
+
+#if !defined letopt_optimize_Os && defined __clang_major__
+# if __STDC_VERSION__ < 202000L
+#  if __clang_major__ < 17
+#   define letopt_optimize_Os _Pragma("clang optimize on")
+#  endif // __clang_major__ < 17
+
+#  if __clang_major__ == 17
+#   define letopt_optimize_Os                                    \
+        _Pragma("clang diagnostic push")                         \
+        _Pragma("clang diagnostic ignored \"-Wc2x-extensions\"") \
+        [[gnu::optimize("Os")]]                                  \
+        _Pragma("clang diagnostic pop")
+#  endif // __clang_major__ == 17
+
+#  if __clang_major__ > 17
+#   define letopt_optimize_Os                                    \
+        _Pragma("clang diagnostic push")                         \
+        _Pragma("clang diagnostic ignored \"-Wc23-extensions\"") \
+        [[gnu::optimize("Os")]]                                  \
+        _Pragma("clang diagnostic pop")
+#  endif // __clang_major__ > 17
+# endif // __STDC_VERSION__ < 202000L
+#endif // !letopt_optimize_Os && __clang_major__
+
+#ifndef letopt_optimize_Os
+# define letopt_optimize_Os [[gnu::optimize("Os")]]
+#endif // letopt_optimize_Os
+
 #define letopt_error(opt) ((opt)->p.e)
 #define letopt_nargs(opt) ((opt)->p.n)
 #define letopt_arg(opt,i) ((opt)->p.q[i])
@@ -71,11 +110,19 @@ struct letopt_state {
 
 #ifdef __clang__
 # pragma clang diagnostic push
+# pragma clang diagnostic ignored "-Wunknown-warning-option"
 # pragma clang diagnostic ignored "-Wc++-compat"
 # pragma clang diagnostic ignored "-Wc++98-compat"
 # pragma clang diagnostic ignored "-Wgnu-empty-initializer"
+# pragma clang diagnostic ignored "-Wgnu-zero-variadic-macro-arguments"
 # pragma clang diagnostic ignored "-Wpre-c2x-compat"
 # pragma clang diagnostic ignored "-Wunknown-attributes"
+# if __clang_major__ >= 19
+#  pragma clang diagnostic ignored "-Wpre-c11-compat"
+# endif // __clang_major__ >= 19
+# if __clang_major__ == 19 && __STDC_VERSION__ < 202311L
+#  pragma clang diagnostic ignored "-Wc23-extensions"
+# endif // __clang_major__ == 19 && __STDC_VERSION__ < 202311L
 #endif // __clang__
 
 #define ws0x0()  " "
@@ -140,6 +187,11 @@ struct letopt_state {
 #define gen_opt_var(T,...) call(opt_var \
 	, gen_arg_list(T,__VA_ARGS__),)
 
+#ifdef __clang__
+# pragma clang diagnostic push
+# pragma clang diagnostic ignored "-Wpadded"
+#endif // __clang__
+
 struct letopt {
 	struct letopt_state p;
 
@@ -173,6 +225,17 @@ struct letopt {
 		#undef opt_var
 	} has;
 };
+
+#ifdef __clang__
+# pragma clang diagnostic pop
+#endif // __clang__
+
+#ifdef __clang_major__
+# if __clang_major__ >= 16
+#  pragma clang diagnostic push
+#  pragma clang diagnostic ignored "-Wunsafe-buffer-usage"
+# endif // __clang_major__ >= 16
+#endif // __clang_major__
 
 __attribute__((always_inline))
 static inline bool
@@ -296,7 +359,7 @@ next:
 	#undef parse_chr
 }
 
-[[noreturn]] static void
+letopt_noreturn static void
 letopt_helpful_exit (struct letopt *opt);
 
 static struct letopt
@@ -358,6 +421,12 @@ letopt_init (int    argc,
 
 	return opt;
 }
+
+#ifdef __clang_major__
+# if __clang_major__ >= 16
+#  pragma clang diagnostic pop
+# endif // __clang_major__ >= 16
+#endif // __clang_major__
 
 #undef gen_opt_var
 #undef number_
@@ -440,7 +509,7 @@ letopt_fini (struct letopt *opt)
 # define LETOPT_HELP_DETAILS ""
 #endif // DETAILS
 
-[[gnu::optimize("Os")]] static void
+letopt_optimize_Os static void
 letopt_usage (struct letopt const *const opt)
 {
 	#pragma GCC diagnostic push
@@ -469,15 +538,49 @@ letopt_usage (struct letopt const *const opt)
 	if (opt->p.e)
 		fprintf(stderr, "%s\n", strerror(opt->p.e));
 
+	#ifdef __clang__
+	# pragma clang diagnostic push
+	# pragma clang diagnostic ignored "-Wlanguage-extension-token"
+	# if __clang_major__ == 17
+	#  pragma clang diagnostic ignored "-Wc2x-extensions"
+	# endif // __clang_major__ == 17
+	# if __clang_major__ >= 18
+	#  pragma clang diagnostic ignored "-Wc23-extensions"
+	# endif // __clang_major__ >= 18
+	#endif // __clang__
+
+	#ifndef typeof
+	# ifdef __clang__
+	#  if __STDC_VERSION__ < 202000L || __clang_major__ == 14 || __clang_major__ == 15
+	#   define typeof __typeof__
+	#   define letopt_typeof_compat_defined
+	#  endif // __STDC_VERSION__ < 202000L || __clang_major__ == 14 || __clang_major__ == 15
+	# elif defined __GNUC__ && defined __STRICT_ANSI__
+	#  if __STDC_VERSION__ < 202000L || __GNUC__ < 13
+	#   define typeof __typeof__
+	#   define letopt_typeof_compat_defined
+	#  endif // __STDC_VERSION__ < 202000L || __GNUC__ < 13
+	# endif // __clang__ || (__GNUC__ && __STRICT_ANSI__)
+	#endif // !typeof
+
 #ifdef PROGNAME
 	(void)fputs(help_text(transformed_options), stdout);
 #else // PROGNAME
 	(void)printf("Usage: %s %s", opt->p.v[0],
 	             help_text(transformed_options));
 #endif // PROGNAME
+
+	#ifdef letopt_typeof_compat_defined
+	# undef letopt_typeof_compat_defined
+	# undef typeof
+	#endif // letopt_typeof_compat_defined
+
+	#ifdef __clang__
+	# pragma clang diagnostic pop
+	#endif // __clang__
 }
 
-[[noreturn]] static void
+letopt_noreturn static void
 letopt_helpful_exit (struct letopt *opt)
 {
 	letopt_usage(opt);
@@ -528,6 +631,8 @@ letopt_helpful_exit (struct letopt *opt)
 #undef first
 #undef eval
 #undef call
+#undef letopt_optimize_Os
+#undef letopt_noreturn
 
 #endif // OPTIONS
 

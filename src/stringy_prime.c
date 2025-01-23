@@ -41,6 +41,16 @@
 
 #include "letopt.h"
 
+#ifdef __clang_major__
+# if __clang_major__ >= 14
+#  pragma clang diagnostic push
+#  pragma clang diagnostic ignored "-Wdeclaration-after-statement"
+#  if __clang_major__ >= 16
+#   pragma clang diagnostic ignored "-Wunsafe-buffer-usage"
+#  endif // __clang_major__ >= 16
+# endif // __clang_major__ >= 14
+#endif // __clang_major__
+
 int
 main (int    argc,
       char **argv)
@@ -127,3 +137,9 @@ main (int    argc,
 
 	return letopt_fini(&opt);
 }
+
+#ifdef __clang_major__
+# if __clang_major__ >= 14
+#  pragma clang diagnostic pop
+# endif // __clang_major__ >= 14
+#endif // __clang_major__
