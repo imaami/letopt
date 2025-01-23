@@ -23,6 +23,34 @@ struct letopt_state {
 	int          n;
 	char        *p;
 };
+
+/* Temporary internal convenience macros for sprinkling extern
+ * declarations inside function bodies and letopt.c. Should be
+ * undefined immediately after use.
+ *
+ * An ugly hack, sure, but it serves its intended dual purpose
+ * of reducing internal functions' visibility without multiple
+ * source locations to keep in sync.
+ */
+#define extern_letopt_state_init()                           \
+        extern struct letopt_state                           \
+        letopt_state_init (int    argc,                      \
+                           char **argv)
+#define extern_letopt_get_long_opt_arg()                     \
+        extern int                                           \
+        letopt_get_long_opt_arg (struct letopt_state *state, \
+                                 size_t               len)
+#define extern_letopt_get_number_arg()                       \
+        extern bool                                          \
+        letopt_get_number_arg (struct letopt_state *state,   \
+                               int64_t             *dest,    \
+                               int64_t              min,     \
+                               int64_t              max)
+#define extern_letopt_get_string_arg()                       \
+        extern bool                                          \
+        letopt_get_string_arg (struct letopt_state  *state,  \
+                               char const          **dest)
+
 #endif // OPTIONS || INCLUDED_FROM_LETOPT_C_
 
 #ifdef OPTIONS
@@ -150,15 +178,12 @@ __attribute__((always_inline))
 static inline bool
 handle_long_opt (struct letopt *const opt)
 {
-	extern int
-	letopt_get_long_opt_arg (struct letopt_state *state,
-	                         size_t               len);
+	extern_letopt_get_long_opt_arg();
+	extern_letopt_get_number_arg();
 
-	extern bool
-	letopt_get_number_arg (struct letopt_state *state,
-	                       int64_t             *dest,
-	                       int64_t              min,
-	                       int64_t              max);
+	#ifndef INCLUDED_FROM_LETOPT_C_
+	# undef extern_letopt_get_long_opt_arg
+	#endif // !INCLUDED_FROM_LETOPT_C_
 
 	#define parse_str(T, tag, chr, str, ...)                           \
 		if (!__builtin_strncmp(opt->p.p, str, sizeof str - 1U)) {  \
@@ -213,15 +238,13 @@ __attribute__((always_inline))
 static inline bool
 handle_short_opt (struct letopt *const opt)
 {
-	extern bool
-	letopt_get_number_arg (struct letopt_state *state,
-	                       int64_t             *dest,
-	                       int64_t              min,
-	                       int64_t              max);
+	extern_letopt_get_number_arg();
+	extern_letopt_get_string_arg();
 
-	extern bool
-	letopt_get_string_arg (struct letopt_state  *state,
-	                       char const          **dest);
+	#ifndef INCLUDED_FROM_LETOPT_C_
+	# undef extern_letopt_get_number_arg
+	# undef extern_letopt_get_string_arg
+	#endif // !INCLUDED_FROM_LETOPT_C_
 
 	#define parse_chr(T, tag, chr, ...)                           \
 		case chr:                                             \
@@ -280,9 +303,11 @@ static struct letopt
 letopt_init (int    argc,
              char **argv)
 {
-	extern struct letopt_state
-	letopt_state_init (int    argc,
-	                   char **argv);
+	extern_letopt_state_init();
+
+	#ifndef INCLUDED_FROM_LETOPT_C_
+	# undef extern_letopt_state_init
+	#endif // !INCLUDED_FROM_LETOPT_C_
 
 	struct letopt opt = {
 		.p = letopt_state_init(argc, argv)

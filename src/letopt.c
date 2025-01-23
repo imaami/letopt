@@ -9,6 +9,16 @@
 #include "letopt.h"
 #undef INCLUDED_FROM_LETOPT_C_
 
+extern_letopt_state_init();
+extern_letopt_get_number_arg();
+extern_letopt_get_string_arg();
+extern_letopt_get_long_opt_arg();
+
+#undef extern_letopt_state_init
+#undef extern_letopt_get_number_arg
+#undef extern_letopt_get_string_arg
+#undef extern_letopt_get_long_opt_arg
+
 struct letopt_state
 letopt_state_init (int    argc,
                    char **argv)
