@@ -49,7 +49,7 @@ letopt_state_init (int    argc,
 
 	if (state.c > 1 &&
 	    !(state.q = calloc((size_t)state.c, sizeof *state.q)))
-		state.e = errno;
+		state.e = errno ? errno : ENOMEM;
 
 	return state;
 }
