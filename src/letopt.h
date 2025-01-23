@@ -151,13 +151,14 @@ static inline bool
 handle_long_opt (struct letopt *const opt)
 {
 	extern int
-	letopt_get_long_opt_arg (struct letopt_state *const state,
-	                         const size_t               len);
+	letopt_get_long_opt_arg (struct letopt_state *state,
+	                         size_t               len);
+
 	extern bool
-	letopt_get_number_arg (struct letopt_state *const state,
-	                       int64_t *const             dest,
-	                       const int64_t              min,
-	                       const int64_t              max);
+	letopt_get_number_arg (struct letopt_state *state,
+	                       int64_t             *dest,
+	                       int64_t              min,
+	                       int64_t              max);
 
 	#define parse_str(T, tag, chr, str, ...)                           \
 		if (!__builtin_strncmp(opt->p.p, str, sizeof str - 1U)) {  \
@@ -213,13 +214,14 @@ static inline bool
 handle_short_opt (struct letopt *const opt)
 {
 	extern bool
-	letopt_get_number_arg (struct letopt_state *const state,
-	                       int64_t *const             dest,
-	                       const int64_t              min,
-	                       const int64_t              max);
+	letopt_get_number_arg (struct letopt_state *state,
+	                       int64_t             *dest,
+	                       int64_t              min,
+	                       int64_t              max);
+
 	extern bool
-	letopt_get_string_arg (struct letopt_state *const state,
-	                       char const **const         dest);
+	letopt_get_string_arg (struct letopt_state  *state,
+	                       char const          **dest);
 
 	#define parse_chr(T, tag, chr, ...)                           \
 		case chr:                                             \
